@@ -1,1 +1,6 @@
-/Users/princy/Desktop/CareCompare_App/CareCompare_App/src/main/java/com/carecompare/CareCompareAppApplication.java
+/Users/princy/Desktop/CareCompare_App/src/main/java/com/carecompare/CareCompareAppApplication.java
+/Users/princy/Desktop/CareCompare_App/src/main/java/com/carecompare/config/SecurityConfig.java
+/Users/princy/Desktop/CareCompare_App/src/main/java/com/carecompare/controller/AuthController.java
+/Users/princy/Desktop/CareCompare_App/src/main/java/com/carecompare/model/User.java
+/Users/princy/Desktop/CareCompare_App/src/main/java/com/carecompare/repository/UserRepository.java
+/Users/princy/Desktop/CareCompare_App/src/main/java/com/carecompare/service/UserService.java
