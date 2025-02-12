@@ -1,2 +1,11 @@
-com/carecompare/model/User.class
+com/carecompare/config/SecurityConfig.class
+com/carecompare/controller/AuthController.class
+com/carecompare/model/InsurancePlan.class
 com/carecompare/CareCompareAppApplication.class
+com/carecompare/config/JwtAuthFilter.class
+com/carecompare/model/User.class
+com/carecompare/repository/UserRepository.class
+com/carecompare/util/JwtUtil.class
+com/carecompare/service/DashboardService.class
+com/carecompare/controller/DashboardController.class
+com/carecompare/service/UserService.class

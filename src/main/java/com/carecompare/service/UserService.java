@@ -1,10 +1,13 @@
 package com.carecompare.service;
 
+import java.util.Optional;
+
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.carecompare.model.User;
 import com.carecompare.repository.UserRepository;
+import com.carecompare.util.JwtUtil;
 
 /**
  * Service class responsible for handling user-related business logic.
@@ -15,16 +18,19 @@ public class UserService {
 
     private final UserRepository userRepository;  // Repository to interact with the database
     private final BCryptPasswordEncoder passwordEncoder; // Encoder for hashing passwords
+    private final JwtUtil jwtUtil; // Utility for generating JWT tokens
 
     /**
-     * Constructor-based dependency injection of UserRepository.
+     * Constructor-based dependency injection of UserRepository and JwtUtil.
      * Initializes the password encoder.
      *
      * @param userRepository Repository for user-related database operations.
+     * @param jwtUtil Utility class for handling JWT token generation and validation.
      */
-    public UserService(UserRepository userRepository) {
+    public UserService(UserRepository userRepository, JwtUtil jwtUtil) {
         this.userRepository = userRepository;
         this.passwordEncoder = new BCryptPasswordEncoder(); // Instantiating password encoder
+        this.jwtUtil = jwtUtil;
     }
 
     /**
@@ -38,34 +44,38 @@ public class UserService {
      * @param user The user object containing registration details.
      * @return true if registration is successful, false if the email already exists.
      */
-    public boolean registerUser(User user) {
+    public User registerUser(User user) {
         if (userRepository.findByEmail(user.getEmail()).isPresent()) {
-            return false; // User with this email already exists
+            return null; // Return null if user already exists
         }
-
         // Encrypt the password before saving
-        user.setPasswordHash(passwordEncoder.encode(user.getPasswordHash()));
+    user.setPasswordHash(passwordEncoder.encode(user.getPasswordHash()));
 
-        // Save the user into the database
-        userRepository.save(user);
-        return true; // Registration successful
-    }
-
+    // Save and return the user
+    return userRepository.save(user);
+}
     /**
-     * Authenticates a user during login.
+     * Authenticates a user during login and generates a JWT token upon successful login.
      * 
      * Steps:
      * 1. Retrieves user details based on the provided email.
      * 2. If the user exists, compares the provided password with the stored hashed password.
-     * 3. Returns true if authentication is successful, false otherwise.
+     * 3. If authentication is successful, generates and returns a JWT token.
+     * 4. Returns null if authentication fails.
      *
      * @param email The email provided by the user during login.
      * @param password The plaintext password entered by the user.
-     * @return true if authentication is successful, false otherwise.
+     * @return JWT token if authentication is successful, null otherwise.
      */
-    public boolean authenticateUser(String email, String password) {
-        return userRepository.findByEmail(email)
-                .map(user -> passwordEncoder.matches(password, user.getPasswordHash())) // Match plaintext password with hashed password
-                .orElse(false); // Return false if user not found
+    public String authenticateUser(String email, String password) {
+        Optional<User> userOptional = userRepository.findByEmail(email);
+
+        if (userOptional.isPresent()) {
+            User user = userOptional.get();
+            if (passwordEncoder.matches(password, user.getPasswordHash())) {
+                return jwtUtil.generateToken(email); // Generate JWT Token
+            }
+        }
+        return null; // Authentication failed
     }
 }
