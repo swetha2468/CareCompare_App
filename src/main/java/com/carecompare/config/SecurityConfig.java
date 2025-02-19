@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -16,8 +17,6 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 /**
  * Security configuration class for handling authentication and authorization.
@@ -83,15 +82,13 @@ public class SecurityConfig {
      * @throws Exception In case of security configuration errors.
      */
     @Bean
-    public SecurityFilterChain securityFilterChain(org.springframework.security.config.annotation.web.builders.HttpSecurity http) throws Exception {
-        return http
-                .csrf(AbstractHttpConfigurer::disable)
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(new AntPathRequestMatcher("/auth/**")).permitAll() // Public access for authentication endpoints
-                        .anyRequest().authenticated() // Secure all other endpoints
-                )
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class) // Register JWT filter
-                .build();
-    }
+        public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+            return http
+                    .csrf(AbstractHttpConfigurer::disable)
+                    .authorizeHttpRequests(auth -> auth
+                            .anyRequest().permitAll() // Temporarily disable authentication
+                    )
+                    .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                    .build();
+}
 }

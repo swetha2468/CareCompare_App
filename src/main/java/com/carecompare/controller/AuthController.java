@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.carecompare.model.User;
 import com.carecompare.service.UserService;
 
+import jakarta.validation.Valid;
+
 /**
  * REST Controller for handling user authentication and registration.
  * Manages user sign-up and login endpoints.
@@ -36,14 +38,17 @@ public class AuthController {
      * @return ResponseEntity indicating success or failure of registration.
      */
     @PostMapping("/register")
-        public ResponseEntity<?> registerUser(@RequestBody User user) {
-        User registeredUser = userService.registerUser(user);
-    
-        if (registeredUser != null) {
-            return ResponseEntity.ok(registeredUser); // Return user data upon successful registration
-        } else {
-            return ResponseEntity.badRequest().body("User with this email already exists.");
-    }
+        public ResponseEntity<?> registerUser(@Valid @RequestBody User user) {
+            if (user.getEmail() == null || user.getPasswordHash() == null || user.getName() == null) {
+                return ResponseEntity.badRequest().body("Invalid request: missing fields.");
+            }
+
+            User newUser = userService.registerUser(user);
+            if (newUser != null) {
+                return ResponseEntity.ok("User registered successfully");
+            } else {
+                return ResponseEntity.badRequest().body("User already exists");
+            }
 }
 
 
