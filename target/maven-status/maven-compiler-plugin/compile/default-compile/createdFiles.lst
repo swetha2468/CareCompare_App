@@ -1,4 +1,5 @@
 com/carecompare/config/SecurityConfig.class
+com/carecompare/util/PasswordHasher.class
 com/carecompare/controller/AuthController.class
 com/carecompare/model/InsurancePlan.class
 com/carecompare/CareCompareAppApplication.class
