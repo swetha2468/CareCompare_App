@@ -32,10 +32,12 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0  # Ensures all files are checked out
+          fetch-depth: 0  # ✅ Ensures all files are checked out
 
-      - name: List Repository Files (Debugging)
-        run: ls -lah  # Check if Dockerfile exists inside GitHub Actions
+      - name: Debug Repository Files
+        run: |
+          pwd  # ✅ Print current working directory
+          ls -lah  # ✅ List all files in the directory
 
       - name: Set Up JDK 17
         uses: actions/setup-java@v3
