@@ -1,10 +1,11 @@
 package com.carecompare.controller;
 
+import java.util.Map;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.carecompare.model.User;
@@ -39,7 +40,7 @@ public class AuthController {
      */
     @PostMapping("/register")
         public ResponseEntity<?> registerUser(@Valid @RequestBody User user) {
-            if (user.getEmail() == null || user.getPasswordHash() == null || user.getName() == null) {
+            if (user.getEmail() == null || user.getPassword() == null || user.getName() == null) {
                 return ResponseEntity.badRequest().body("Invalid request: missing fields.");
             }
 
@@ -60,12 +61,16 @@ public class AuthController {
      * @return ResponseEntity containing a JWT token if authentication is successful, otherwise an error message.
      */
     @PostMapping("/login")
-    public ResponseEntity<String> loginUser(@RequestParam String email, @RequestParam String password) {
-        String jwtToken = userService.authenticateUser(email, password);
-        if (jwtToken != null) {
-            return ResponseEntity.ok(jwtToken); // Return JWT token instead of plain success message
-        } else {
-            return ResponseEntity.status(401).body("Invalid email or password.");
-        }
+public ResponseEntity<String> loginUser(@RequestBody Map<String, String> credentials) {
+    String email = credentials.get("email");
+    String password = credentials.get("password");
+
+    String jwtToken = userService.authenticateUser(email, password);
+    if (jwtToken != null) {
+        return ResponseEntity.ok(jwtToken);
+    } else {
+        return ResponseEntity.status(401).body("Invalid email or password.");
     }
+}
+
 }

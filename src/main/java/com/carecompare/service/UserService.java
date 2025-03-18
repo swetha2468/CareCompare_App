@@ -4,6 +4,7 @@ import java.util.Optional;
 
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.carecompare.model.User;
 import com.carecompare.repository.UserRepository;
@@ -42,18 +43,28 @@ public class UserService {
      * 3. Saves the new user in the database.
      *
      * @param user The user object containing registration details.
-     * @return true if registration is successful, false if the email already exists.
+     * @return The registered user if successful, null if user already exists.
      */
+    @Transactional
     public User registerUser(User user) {
-        if (userRepository.findByEmail(user.getEmail()).isPresent()) {
-            return null; // Return null if user already exists
+        // Validate required fields before processing
+        if (user.getEmail() == null || user.getPassword() == null || user.getName() == null) {
+            throw new IllegalArgumentException("Missing required fields: email, password, or name.");
         }
-        // Encrypt the password before saving
-    user.setPasswordHash(passwordEncoder.encode(user.getPasswordHash()));
 
-    // Save and return the user
-    return userRepository.save(user);
-}
+        // Check if the user already exists
+        if (userRepository.findByEmail(user.getEmail()).isPresent()) {
+            return null; // User already exists
+        }
+
+        // Hash the password before storing in the database
+        String hashedPassword = passwordEncoder.encode(user.getPassword());
+        user.setPassword(hashedPassword);
+
+        // Save and return the user
+        return userRepository.save(user);
+    }
+
     /**
      * Authenticates a user during login and generates a JWT token upon successful login.
      * 
@@ -72,7 +83,7 @@ public class UserService {
 
         if (userOptional.isPresent()) {
             User user = userOptional.get();
-            if (passwordEncoder.matches(password, user.getPasswordHash())) {
+            if (passwordEncoder.matches(password, user.getPassword())) {
                 return jwtUtil.generateToken(email); // Generate JWT Token
             }
         }

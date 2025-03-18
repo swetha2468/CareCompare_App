@@ -1,22 +1,25 @@
 package com.carecompare.config;
 
-import java.util.List;
+import java.util.Collections;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+import com.carecompare.model.User;
+import com.carecompare.repository.UserRepository;
 
 /**
  * Security configuration class for handling authentication and authorization.
@@ -26,48 +29,45 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
+    private final UserRepository userRepository;
 
     /**
-     * Constructor-based dependency injection for JwtAuthFilter.
-     * 
-     * @param jwtAuthFilter JWT authentication filter for request validation.
+     * ✅ Constructor Injection (Added @Lazy to avoid circular dependency)
      */
-    public SecurityConfig(JwtAuthFilter jwtAuthFilter) {
+    public SecurityConfig(@Lazy JwtAuthFilter jwtAuthFilter, UserRepository userRepository) {
         this.jwtAuthFilter = jwtAuthFilter;
+        this.userRepository = userRepository;
     }
 
     /**
-     * Bean to define in-memory user details for testing purposes.
-     * 
-     * @return UserDetailsService with a default user.
+     * ✅ Fetch user from database for authentication (Fixes the issue)
      */
     @Bean
     public UserDetailsService userDetailsService() {
-        UserDetails user = User.withUsername("admin")
-                .password(passwordEncoder().encode("admin123")) // Hashed password
-                .roles("USER")
-                .build();
-
-        return new InMemoryUserDetailsManager(user);
+        return email -> {
+            User user = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
+            return new org.springframework.security.core.userdetails.User(
+                    user.getEmail(),
+                    user.getPassword(), // ✅ FIXED: Using getPassword() (Mapped correctly to password_hash in DB)
+                    Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"))
+            );
+        };
     }
 
     /**
-     * Bean to define the authentication manager with a DAO authentication provider.
-     * 
-     * @return AuthenticationManager for handling authentication.
+     * ✅ Authentication Manager Bean
      */
     @Bean
-    public AuthenticationManager authenticationManager(UserDetailsService userDetailsService) {
+    public AuthenticationManager authenticationManager() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-        authProvider.setUserDetailsService(userDetailsService);
+        authProvider.setUserDetailsService(userDetailsService());
         authProvider.setPasswordEncoder(passwordEncoder());
-        return new ProviderManager(List.of(authProvider));
+        return new ProviderManager(Collections.singletonList(authProvider));
     }
 
     /**
-     * Bean to define password encoder using BCrypt.
-     * 
-     * @return BCryptPasswordEncoder instance.
+     * ✅ Password Encoder using BCrypt
      */
     @Bean
     public BCryptPasswordEncoder passwordEncoder() {
@@ -75,20 +75,18 @@ public class SecurityConfig {
     }
 
     /**
-     * Configures security filter chain for handling authentication and authorization.
-     * 
-     * @param http HttpSecurity configuration.
-     * @return Configured SecurityFilterChain.
-     * @throws Exception In case of security configuration errors.
+     * ✅ Security Filter Chain Configuration
      */
     @Bean
-        public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-            return http
-                    .csrf(AbstractHttpConfigurer::disable)
-                    .authorizeHttpRequests(auth -> auth
-                            .anyRequest().permitAll() // Temporarily disable authentication
-                    )
-                    .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                    .build();
-}
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        return http
+                .csrf(csrf -> csrf.disable())  
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/auth/register", "/auth/login").permitAll()  
+                        .anyRequest().authenticated()
+                )
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+                .build();
+    }
 }

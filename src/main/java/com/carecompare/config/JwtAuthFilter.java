@@ -7,8 +7,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -18,7 +18,7 @@ import com.carecompare.util.JwtUtil;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.UnsupportedJwtException;
-import io.jsonwebtoken.security.SecurityException; 
+import io.jsonwebtoken.security.SecurityException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -32,14 +32,17 @@ import jakarta.servlet.http.HttpServletResponse;
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
+    private final UserDetailsService userDetailsService; // Load user details
 
     /**
-     * Constructor-based dependency injection for JwtUtil.
+     * Constructor-based dependency injection for JwtUtil and UserDetailsService.
      * 
      * @param jwtUtil Utility class for generating and validating JWT tokens.
+     * @param userDetailsService Service to fetch user details from DB.
      */
-    public JwtAuthFilter(JwtUtil jwtUtil) {
+    public JwtAuthFilter(JwtUtil jwtUtil, UserDetailsService userDetailsService) {
         this.jwtUtil = jwtUtil;
+        this.userDetailsService = userDetailsService;
     }
 
     /**
@@ -57,7 +60,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain)
             throws ServletException, IOException {
-        
+
         final String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
         String jwtToken = null;
         String userEmail = null;
@@ -72,8 +75,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             // If userEmail is extracted and authentication is not yet set
             if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 
-                // Create a dummy UserDetails object (JWT contains user email, no password is needed)
-                UserDetails userDetails = User.withUsername(userEmail).password("").roles("USER").build();
+                // Load user details from database
+                UserDetails userDetails = userDetailsService.loadUserByUsername(userEmail);
 
                 // Validate the token before setting authentication
                 if (jwtUtil.validateToken(jwtToken, userEmail)) {
@@ -90,7 +93,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         } catch (ExpiredJwtException e) {
             response.sendError(HttpStatus.UNAUTHORIZED.value(), "JWT Token has expired");
             return;
-        } catch (SecurityException | MalformedJwtException e) {  
+        } catch (SecurityException | MalformedJwtException e) {
             response.sendError(HttpStatus.UNAUTHORIZED.value(), "Invalid JWT Token");
             return;
         } catch (UnsupportedJwtException e) {

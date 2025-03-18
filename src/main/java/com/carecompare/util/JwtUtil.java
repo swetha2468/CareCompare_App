@@ -1,6 +1,7 @@
 package com.carecompare.util;
 
 import java.security.Key;
+import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -14,10 +15,11 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 
-@Component
+@Component  // Add this annotation to register JwtUtil as a Spring Bean
 public class JwtUtil {
 
-    private static final String SECRET_KEY = "your_secret_key_your_secret_key_your_secret_key"; // Use a long Base64 key
+    private static final String SECRET_KEY = Base64.getEncoder().encodeToString("SuperSecretKeyForJWTGeneration".getBytes());
+
 
     // Generate JWT Token
     public String generateToken(String email) {

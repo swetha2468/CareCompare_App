@@ -35,8 +35,15 @@ public class User {
     @Column(name = "email", unique = true, nullable = false) // Matches schema.sql
     private String email;
 
-    @Column(name = "password_hash", nullable = false) // Matches schema.sql
-    private String passwordHash;
+    @Column(name = "password_hash", nullable = false)
+    private String password;
+    public String getPassword() {
+        return this.password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
 
     //  `@OneToMany` annotation usage
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
