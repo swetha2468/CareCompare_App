@@ -2,7 +2,7 @@ package com.carecompare.service;
 
 import java.util.Optional;
 
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,19 +18,19 @@ import com.carecompare.util.JwtUtil;
 public class UserService {
 
     private final UserRepository userRepository;  // Repository to interact with the database
-    private final BCryptPasswordEncoder passwordEncoder; // Encoder for hashing passwords
+    private final PasswordEncoder passwordEncoder; // Injected password encoder
     private final JwtUtil jwtUtil; // Utility for generating JWT tokens
 
     /**
      * Constructor-based dependency injection of UserRepository and JwtUtil.
-     * Initializes the password encoder.
-     *
+     * 
      * @param userRepository Repository for user-related database operations.
+     * @param passwordEncoder Injected password encoder.
      * @param jwtUtil Utility class for handling JWT token generation and validation.
      */
-    public UserService(UserRepository userRepository, JwtUtil jwtUtil) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtUtil jwtUtil) {
         this.userRepository = userRepository;
-        this.passwordEncoder = new BCryptPasswordEncoder(); // Instantiating password encoder
+        this.passwordEncoder = passwordEncoder; // Injected instead of creating new instance
         this.jwtUtil = jwtUtil;
     }
 
@@ -47,21 +47,17 @@ public class UserService {
      */
     @Transactional
     public User registerUser(User user) {
-        // Validate required fields before processing
         if (user.getEmail() == null || user.getPassword() == null || user.getName() == null) {
             throw new IllegalArgumentException("Missing required fields: email, password, or name.");
         }
 
-        // Check if the user already exists
         if (userRepository.findByEmail(user.getEmail()).isPresent()) {
             return null; // User already exists
         }
 
-        // Hash the password before storing in the database
-        String hashedPassword = passwordEncoder.encode(user.getPassword());
-        user.setPassword(hashedPassword);
+        // Hash password before storing
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
 
-        // Save and return the user
         return userRepository.save(user);
     }
 

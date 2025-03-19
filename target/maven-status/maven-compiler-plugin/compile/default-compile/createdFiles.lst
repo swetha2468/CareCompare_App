@@ -6,6 +6,7 @@ com/carecompare/CareCompareAppApplication.class
 com/carecompare/config/JwtAuthFilter.class
 com/carecompare/model/User.class
 com/carecompare/repository/UserRepository.class
+com/carecompare/dto/LoginRequest.class
 com/carecompare/util/JwtUtil.class
 com/carecompare/service/DashboardService.class
 com/carecompare/controller/DashboardController.class

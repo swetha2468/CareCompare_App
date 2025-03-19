@@ -1,12 +1,12 @@
 package com.carecompare.util;
 
 import java.security.Key;
-import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import io.jsonwebtoken.Claims;
@@ -15,13 +15,17 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 
-@Component  // Add this annotation to register JwtUtil as a Spring Bean
+@Component  // Register JwtUtil as a Spring Bean
 public class JwtUtil {
 
-    private static final String SECRET_KEY = Base64.getEncoder().encodeToString("SuperSecretKeyForJWTGeneration".getBytes());
+    private final String secretKey;
 
+    
+    public JwtUtil(@Value("${jwt.secret:defaultSuperSecretKeyWithAtLeast32Chars}") String secretKey) {
+        this.secretKey = secretKey.length() < 32 ? "defaultSuperSecretKeyWithAtLeast32Chars" : secretKey;
+    }
 
-    // Generate JWT Token
+    //  Generate JWT Token
     public String generateToken(String email) {
         Map<String, Object> claims = new HashMap<>();
         return createToken(claims, email);
@@ -38,7 +42,7 @@ public class JwtUtil {
                 .compact();
     }
 
-    // Extract Email from Token
+    //  Extract Email from Token
     public String extractEmail(String token) {
         return extractClaim(token, Claims::getSubject);
     }
@@ -49,7 +53,7 @@ public class JwtUtil {
         return claimsResolver.apply(claims);
     }
 
-    // Extract All Claims
+    //  Extract All Claims
     private Claims extractAllClaims(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(getSigningKey())
@@ -58,20 +62,20 @@ public class JwtUtil {
                 .getBody();
     }
 
-    // Check if Token is Expired
+    //  Check if Token is Expired
     public boolean isTokenExpired(String token) {
         return extractClaim(token, Claims::getExpiration).before(new Date());
     }
 
-    // Validate Token
+    //  Validate Token
     public boolean validateToken(String token, String userEmail) {
         final String extractedEmail = extractEmail(token);
         return (extractedEmail.equals(userEmail) && !isTokenExpired(token));
     }
 
-    // Get Signing Key (Convert String to Key)
+    //  Get Signing Key (Fix WeakKeyException)
     private Key getSigningKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(SECRET_KEY);
-        return Keys.hmacShaKeyFor(keyBytes);
+        byte[] keyBytes = Decoders.BASE64.decode(secretKey);
+            return Keys.hmacShaKeyFor(keyBytes);
     }
 }
