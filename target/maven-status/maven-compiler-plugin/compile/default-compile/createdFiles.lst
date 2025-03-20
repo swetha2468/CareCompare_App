@@ -6,8 +6,11 @@ com/carecompare/CareCompareAppApplication.class
 com/carecompare/config/JwtAuthFilter.class
 com/carecompare/model/User.class
 com/carecompare/repository/UserRepository.class
+com/carecompare/repository/TreatmentRepository.class
 com/carecompare/dto/LoginRequest.class
 com/carecompare/util/JwtUtil.class
 com/carecompare/service/DashboardService.class
+com/carecompare/repository/InsurancePlanRepository.class
 com/carecompare/controller/DashboardController.class
+com/carecompare/model/Treatment.class
 com/carecompare/service/UserService.class

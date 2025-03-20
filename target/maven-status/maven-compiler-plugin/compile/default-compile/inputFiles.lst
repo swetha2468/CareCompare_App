@@ -5,7 +5,10 @@
 /Users/princy/Desktop/CareCompare_App/src/main/java/com/carecompare/controller/DashboardController.java
 /Users/princy/Desktop/CareCompare_App/src/main/java/com/carecompare/dto/LoginRequest.java
 /Users/princy/Desktop/CareCompare_App/src/main/java/com/carecompare/model/InsurancePlan.java
+/Users/princy/Desktop/CareCompare_App/src/main/java/com/carecompare/model/Treatment.java
 /Users/princy/Desktop/CareCompare_App/src/main/java/com/carecompare/model/User.java
+/Users/princy/Desktop/CareCompare_App/src/main/java/com/carecompare/repository/InsurancePlanRepository.java
+/Users/princy/Desktop/CareCompare_App/src/main/java/com/carecompare/repository/TreatmentRepository.java
 /Users/princy/Desktop/CareCompare_App/src/main/java/com/carecompare/repository/UserRepository.java
 /Users/princy/Desktop/CareCompare_App/src/main/java/com/carecompare/service/DashboardService.java
 /Users/princy/Desktop/CareCompare_App/src/main/java/com/carecompare/service/UserService.java
