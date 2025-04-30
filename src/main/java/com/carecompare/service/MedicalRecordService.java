@@ -1,19 +1,19 @@
 package com.carecompare.service;
 
-import com.carecompare.model.MedicalRecord;
-import com.carecompare.repository.MedicalRecordRepository;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
+import com.carecompare.model.MedicalRecord;
+import com.carecompare.repository.MedicalRecordRepository;
 
 @Service
 public class MedicalRecordService {
-
     @Autowired
     private MedicalRecordRepository medicalRecordRepository;
 
-    public List<MedicalRecord> getAllMedicalRecords() {
-        return medicalRecordRepository.findAll();
+    public List<MedicalRecord> getRecordsByUserId(Long userId) {
+        return medicalRecordRepository.findByPatientId(userId);
     }
-} 
+}

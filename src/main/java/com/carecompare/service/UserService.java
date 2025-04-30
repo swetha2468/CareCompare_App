@@ -1,88 +1,114 @@
 package com.carecompare.service;
 
+import java.util.Map;
 import java.util.Optional;
 
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
+import com.carecompare.model.InsurancePlan;
 import com.carecompare.model.User;
 import com.carecompare.repository.UserRepository;
-import com.carecompare.util.JwtUtil;
 
-/**
- * Service class responsible for handling user-related business logic.
- * This includes user registration, authentication, and password encryption.
- */
 @Service
 public class UserService {
+    @Autowired
+    private UserRepository userRepository;
+    
+    @Autowired
+    private InsurancePlanService insurancePlanService;
 
-    private final UserRepository userRepository;  // Repository to interact with the database
-    private final PasswordEncoder passwordEncoder; // Injected password encoder
-    private final JwtUtil jwtUtil; // Utility for generating JWT tokens
-
-    /**
-     * Constructor-based dependency injection of UserRepository and JwtUtil.
-     * 
-     * @param userRepository Repository for user-related database operations.
-     * @param passwordEncoder Injected password encoder.
-     * @param jwtUtil Utility class for handling JWT token generation and validation.
-     */
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtUtil jwtUtil) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder; // Injected instead of creating new instance
-        this.jwtUtil = jwtUtil;
+    public User findById(Long id) {
+        Optional<User> user = userRepository.findById(id);
+        return user.orElse(null);
+    }
+    
+    public User findByPolicyNumber(String policyNumber) {
+        return userRepository.findByPolicyNumber(policyNumber);
+    }
+    
+    public User registerUser(User user) {
+        // Validate the policy number and associate with insurance plan
+        if (user.getPolicyNumber() != null && !user.getPolicyNumber().isEmpty()) {
+            Optional<InsurancePlan> planOptional = insurancePlanService.findByPolicyNumber(user.getPolicyNumber());
+            if (planOptional.isPresent()) {
+                user.setInsurancePlan(planOptional.get());
+            }
+        }
+        return userRepository.save(user);
+    }
+    
+    public User updateUser(User user) {
+        // Check if user exists first to avoid null pointer exceptions
+        User existingUser = findById(user.getId());
+        if (existingUser == null) {
+            throw new RuntimeException("User not found with id: " + user.getId());
+        }
+        
+        // Only update fields that were provided and not null
+        if (user.getUsername() != null) {
+            existingUser.setUsername(user.getUsername());
+        }
+        
+        if (user.getEmail() != null) {
+            existingUser.setEmail(user.getEmail());
+        }
+        
+        // Handle insurance plan and policy number update
+        if (user.getInsurancePlan() != null) {
+            existingUser.setInsurancePlan(user.getInsurancePlan());
+        }
+        
+        if (user.getPolicyNumber() != null) {
+            existingUser.setPolicyNumber(user.getPolicyNumber());
+        }
+        
+        return userRepository.save(existingUser);
     }
 
     /**
-     * Registers a new user in the system.
-     * 
-     * Steps:
-     * 1. Checks if the user already exists based on the email.
-     * 2. If not, hashes the password using BCrypt.
-     * 3. Saves the new user in the database.
-     *
-     * @param user The user object containing registration details.
-     * @return The registered user if successful, null if user already exists.
+     * Update user profile data from a map of profile fields
      */
-    @Transactional
-    public User registerUser(User user) {
-        if (user.getEmail() == null || user.getPassword() == null || user.getName() == null) {
-            throw new IllegalArgumentException("Missing required fields: email, password, or name.");
+    public User updateUserProfile(User user, Map<String, String> profileData) {
+        // Update the user profile fields from the map
+        if (profileData.containsKey("email")) {
+            user.setEmail(profileData.get("email"));
         }
-
-        if (userRepository.findByEmail(user.getEmail()).isPresent()) {
-            return null; // User already exists
+        
+        // Store profile data in user object directly
+        // In a more complex application, this might be stored in a separate UserProfile entity
+        if (profileData.containsKey("firstName")) {
+            user.setFirstName(profileData.get("firstName"));
         }
-
-        // Hash password before storing
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-
+        
+        if (profileData.containsKey("lastName")) {
+            user.setLastName(profileData.get("lastName"));
+        }
+        
+        if (profileData.containsKey("phoneNumber")) {
+            user.setPhoneNumber(profileData.get("phoneNumber"));
+        }
+        
+        if (profileData.containsKey("address")) {
+            user.setAddress(profileData.get("address"));
+        }
+        
+        if (profileData.containsKey("dateOfBirth")) {
+            user.setDateOfBirth(profileData.get("dateOfBirth"));
+        }
+        
         return userRepository.save(user);
     }
 
     /**
-     * Authenticates a user during login and generates a JWT token upon successful login.
-     * 
-     * Steps:
-     * 1. Retrieves user details based on the provided email.
-     * 2. If the user exists, compares the provided password with the stored hashed password.
-     * 3. If authentication is successful, generates and returns a JWT token.
-     * 4. Returns null if authentication fails.
-     *
-     * @param email The email provided by the user during login.
-     * @param password The plaintext password entered by the user.
-     * @return JWT token if authentication is successful, null otherwise.
+     * Find a user by username
+     * @param username Username to search for
+     * @return User if found, null otherwise
      */
-    public String authenticateUser(String email, String password) {
-        Optional<User> userOptional = userRepository.findByEmail(email);
-
-        if (userOptional.isPresent()) {
-            User user = userOptional.get();
-            if (passwordEncoder.matches(password, user.getPassword())) {
-                return jwtUtil.generateToken(email); // Generate JWT Token
-            }
-        }
-        return null; // Authentication failed
+    public User findByUsername(String username) {
+        return userRepository.findByUsername(username)
+                .orElse(null);
     }
+
+    
 }

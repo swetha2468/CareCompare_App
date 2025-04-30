@@ -2,56 +2,54 @@ package com.carecompare.controller;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.carecompare.service.DashboardService;
 
-/**
- * Controller for handling dashboard-related requests.
- */
 @RestController
-@RequestMapping("/dashboard")
+@RequestMapping("/api/dashboard")
 public class DashboardController {
+    @Autowired
+    private DashboardService dashboardService;
 
-    private static final Logger logger = LoggerFactory.getLogger(DashboardController.class);
-    
-    private final DashboardService dashboardService;
-
-    public DashboardController(DashboardService dashboardService) {
-        this.dashboardService = dashboardService;
+    @GetMapping("/plans/{userId}")
+    public ResponseEntity<List<Map<String, Object>>> getUserPlans(@PathVariable Long userId) {
+        try {
+            List<Map<String, Object>> plans = dashboardService.getUserPlans(userId)
+                    .stream()
+                    .map(plan -> {
+                        return new java.util.HashMap<String, Object>() {{
+                            put("id", plan.getId());
+                            put("name", plan.getName());
+                            put("provider", plan.getProvider());
+                            put("coverage", plan.getCoverage());
+                        }};
+                    })
+                    .collect(Collectors.toList());
+            return ResponseEntity.ok(plans);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(null);
+        }
     }
 
-    /**
-     * Fetches authenticated user's insurance policies along with covered treatments.
-     * 
-     * @param token JWT token provided in the request header.
-     * @return List of insurance plans with treatments & discounts.
-     */
-    @GetMapping("/policies")
-    public ResponseEntity<?> getUserPolicies(@RequestHeader("Authorization") String token) {
-        logger.info("🔹 Received request with Authorization header: {}", token);
-
-        if (token.startsWith("Bearer ")) {
-            token = token.substring(7);
-        }
-
-        logger.info("🔹 Extracted JWT token: {}", token);
-
-        List<Map<String, Object>> policies = dashboardService.getUserPolicyDetails(token);
-
-        if (policies != null && !policies.isEmpty()) {
-            logger.info("Found {} policies for user.", policies.size());
-            return ResponseEntity.ok(policies);
-        } else {
-            logger.warn(" No policies found for the user.");
-            return ResponseEntity.status(404).body("No policies found for this user.");
+    @PostMapping("/compare/{userId}")
+    public ResponseEntity<List<Map<String, Object>>> comparePlans(
+            @PathVariable Long userId,
+            @RequestBody List<Long> planIds) {
+        try {
+            List<Map<String, Object>> comparedPlans = dashboardService.comparePlans(userId, planIds);
+            return ResponseEntity.ok(comparedPlans);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(null);
         }
     }
 }

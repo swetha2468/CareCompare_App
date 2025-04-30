@@ -1,52 +1,47 @@
 package com.carecompare.controller;
 
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
 import com.carecompare.model.UserProfile;
 import com.carecompare.service.UserProfileService;
-
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
-@RequestMapping("/profile")
+@RequestMapping("/api/profile")
 public class UserProfileController {
+    @Autowired
+    private UserProfileService userProfileService;
 
-    private final UserProfileService userProfileService;
-
-    public UserProfileController(UserProfileService userProfileService) {
-        this.userProfileService = userProfileService;
+    @GetMapping("/{id}")
+    public ResponseEntity<UserProfile> getProfile(@PathVariable Long id) {
+        UserProfile profile = userProfileService.findById(id);
+        return profile != null ? ResponseEntity.ok(profile) : ResponseEntity.notFound().build();
     }
 
-    @PostMapping("/update")
-    public ResponseEntity<?> updateUserProfile(@Valid @RequestBody UserProfile userProfile) {
-        if (userProfile.getUser() == null || userProfile.getFirstName() == null
-                || userProfile.getLastName() == null || userProfile.getPhoneNumber() == null) {
-            return ResponseEntity.badRequest().body("Invalid request: missing fields.");
-        }
-
-        UserProfile updatedProfile = userProfileService.createOrUpdateProfile(userProfile);
-
-        if (updatedProfile != null) {
-            return ResponseEntity.ok(updatedProfile);
-        } else {
-            return ResponseEntity.badRequest().body("Failed to update user profile.");
-        }
+    @GetMapping
+    public ResponseEntity<List<UserProfile>> getAllProfiles() {
+        return ResponseEntity.ok(userProfileService.findAll());
     }
 
-    @GetMapping("/{userId}")
-    public ResponseEntity<?> getUserProfile(@PathVariable Long userId) {
-        UserProfile userProfile = userProfileService.getUserProfile(userId);
+    @PostMapping
+    public ResponseEntity<UserProfile> createProfile(@Valid @RequestBody UserProfile userProfile) {
+        UserProfile savedProfile = userProfileService.save(userProfile);
+        return ResponseEntity.ok(savedProfile);
+    }
 
-        if (userProfile != null) {
-            return ResponseEntity.ok(userProfile);
-        } else {
-            return ResponseEntity.status(404).body("User profile not found.");
-        }
+    @PutMapping("/{id}")
+    public ResponseEntity<UserProfile> updateProfile(@PathVariable Long id, @Valid @RequestBody UserProfile userProfile) {
+        userProfile.setId(id); // Ensure the ID is set before saving
+        UserProfile updatedProfile = userProfileService.updateProfile(id, userProfile);
+        return updatedProfile != null ? ResponseEntity.ok(updatedProfile) : ResponseEntity.notFound().build();
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteProfile(@PathVariable Long id) {
+        userProfileService.deleteProfile(id);
+        return ResponseEntity.noContent().build();
     }
 }

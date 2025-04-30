@@ -1,46 +1,46 @@
 package com.carecompare.service;
 
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.carecompare.model.UserProfile;
 import com.carecompare.repository.UserProfileRepository;
-import com.carecompare.repository.UserRepository;
 
-/**
- * Service class for managing user profiles.
- */
 @Service
 public class UserProfileService {
-
-    private final UserProfileRepository userProfileRepository;
-    private final UserRepository userRepository;
-
     @Autowired
-    public UserProfileService(UserProfileRepository userProfileRepository, UserRepository userRepository) {
-        this.userProfileRepository = userProfileRepository;
-        this.userRepository = userRepository;
+    private UserProfileRepository userProfileRepository;
+
+    public UserProfile findById(Long id) {
+        Optional<UserProfile> profile = userProfileRepository.findById(id);
+        return profile.orElse(null);
     }
 
-    public UserProfile createOrUpdateProfile(UserProfile userProfile) {
-        if (userProfile.getUser() == null || userProfile.getUser().getUserId() == null) {
-            throw new IllegalArgumentException("User information is required.");
-        }
-
-        UserProfile existingProfile = userProfileRepository.findByUserUserId(userProfile.getUser().getUserId());
-        if (existingProfile != null) {
-            existingProfile.setFirstName(userProfile.getFirstName());
-            existingProfile.setLastName(userProfile.getLastName());
-            existingProfile.setPhoneNumber(userProfile.getPhoneNumber());
-            return userProfileRepository.save(existingProfile);
-        } else {
-            userProfile.setUser(userRepository.findById(userProfile.getUser().getUserId()).orElseThrow(
-                () -> new RuntimeException("User not found")));
-            return userProfileRepository.save(userProfile);
-        }
+    public List<UserProfile> findAll() {
+        return userProfileRepository.findAll();
     }
 
-    public UserProfile getUserProfile(Long userId) {
-        return userProfileRepository.findByUserUserId(userId);
+    public UserProfile save(UserProfile userProfile) {
+        return userProfileRepository.save(userProfile);
+    }
+
+    public void delete(Long id) {
+        userProfileRepository.deleteById(id);
+    }
+
+    public UserProfile findByUserId(Long userId) {
+        return userProfileRepository.findByUserId(userId).orElse(null);
+    }
+
+    public UserProfile updateProfile(Long id, UserProfile userProfile) {
+        userProfile.setId(id);
+        return userProfileRepository.save(userProfile);
+    }
+
+    public void deleteProfile(Long id) {
+        delete(id);
     }
 }

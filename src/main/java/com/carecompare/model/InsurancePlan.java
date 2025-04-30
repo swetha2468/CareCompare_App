@@ -1,44 +1,91 @@
 package com.carecompare.model;
 
-import jakarta.persistence.Column;
+import java.util.HashSet;
+import java.util.Set;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 @Entity
-@Table(name = "insurance_plans")
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-public class InsurancePlan {
+@Table(name = "insurance_plan")
 
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "hospitals"})
+
+public class InsurancePlan {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "plan_id") // Matches schema.sql
-    private Long planId;
+    private Long id;
+    private String name;
+    private String provider;
+    private String benefits;
+    private String coverage;
+    private String policyNumber;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false) // Foreign key to users table
-    private User user;
+    @ManyToMany(mappedBy = "acceptedPlans")
+    private Set<Hospital> hospitals = new HashSet<>();
 
-    @Column(name = "insurance_name", nullable = false)
-    private String insuranceName;
+    public InsurancePlan() {}
 
-    @Column(name = "plan_name", nullable = false)
-    private String planName;
+    
+    public Long getId() {
+        return id;
+    }
 
-    @Column(name = "deductible", nullable = false)
-    private Double deductible;
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-    @Column(name = "covered_treatments", columnDefinition = "TEXT")
-    private String coveredTreatments;
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getProvider() {
+        return provider;
+    }
+
+    public void setProvider(String provider) {
+        this.provider = provider;
+    }
+
+    public String getBenefits() {
+        return benefits;
+    }
+
+    public void setBenefits(String benefits) {
+        this.benefits = benefits;
+    }
+
+    public String getCoverage() {
+        return coverage;
+    }
+
+    public void setCoverage(String coverage) {
+        this.coverage = coverage;
+    }
+
+    public String getPolicyNumber() {
+        return policyNumber;
+    }
+
+    public void setPolicyNumber(String policyNumber) {
+        this.policyNumber = policyNumber;
+    }
+
+    public Set<Hospital> getHospitals() {
+        return hospitals;
+    }
+
+    public void setHospitals(Set<Hospital> hospitals) {
+        this.hospitals = hospitals;
+    }
 }
